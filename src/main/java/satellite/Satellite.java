@@ -4,83 +4,51 @@ import java.io.*;
 import java.util.*;
 
 public class Satellite {
-
-    static int[][] oldImage;
-    static int[][] newImage;
-    static int noOfRows, noOfCols;
-
     public static void main(String[] args) {
-        try {
-           // {read from input.txt}
-            BufferedReader reader = new BufferedReader(new FileReader("input.txt"));
-            noOfRows = Integer.parseInt(reader.readLine().trim());
-            noOfCols = Integer.parseInt(reader.readLine().trim());
+        try { solve("input.txt"); }
+        catch (IOException e) { System.err.println("Error: " + e.getMessage()); }
+    }
 
-            oldImage = new int[noOfRows][noOfCols];
-            newImage = new int[noOfRows][noOfCols];
-
-            // {read old image}
-            for (int row = 0; row < noOfRows; row++) {
-                String[] parts = reader.readLine().trim().split("\\s+");
-                for (int col = 0; col < noOfCols; col++) {
-                    oldImage[row][col] = Integer.parseInt(parts[col]);
-                }
-            }
-
-            // {read new image}
-            for (int row = 0; row < noOfRows; row++) {
-                String[] parts = reader.readLine().trim().split("\\s+");
-                for (int col = 0; col < noOfCols; col++) {
-                    newImage[row][col] = Integer.parseInt(parts[col]);
-                }
-            }
-
-            reader.close();
-
-            // {determine upper corner}
-            int x1 = 0;
-            while (x1 < noOfRows && equalRows(x1)) x1++;
-
-            int y1 = 0;
-            while (y1 < noOfCols && equalCols(y1)) y1++;
-
-            // {determine lower corner}
-            int x2 = noOfRows - 1;
-            while (x2 >= 0 && equalRows(x2)) x2--;
-
-            int y2 = noOfCols - 1;
-            while (y2 >= 0 && equalCols(y2)) y2--;
-
-            // {output}
-            if (x1 > x2 || y1 > y2) {
-                System.out.println("The two images are the same");
-            } else {
-                x1++;x2++;y1++;y2++;
-                System.out.println(x1 + " " + y1 + " " + (x2) + " " + (y2));
-            }
-
-        } catch (IOException e) {
-            System.err.println("Error reading input file: " + e.getMessage());
+    static void solve(String file) throws IOException {
+        try (Scanner in = new Scanner(new File(file))) {
+            int rows = in.nextInt(), cols = in.nextInt();
+            int[][] oldImage = readImage(in, rows, cols);
+            int[][] newImage = readImage(in, rows, cols);
+            printResult(oldImage, newImage);
         }
     }
 
-    // {check if a row is equal in both images}
-    public static boolean equalRows(int row) {
-        for (int col = 0; col < noOfCols; col++) {
-            if (oldImage[row][col] != newImage[row][col]) {
-                return false;
-            }
-        }
+    static int[][] readImage(Scanner in, int rows, int cols) {
+        int[][] image = new int[rows][cols];
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < cols; c++) image[r][c] = in.nextInt();
+        return image;
+    }
+
+    static int findBoundary(int[][] oldImage, int[][] newImage,
+                            boolean rows, boolean forward) {
+        int limit = rows ? oldImage.length : oldImage[0].length;
+        int index = forward ? 0 : limit - 1, step = forward ? 1 : -1;
+        while (index >= 0 && index < limit && equalLine(oldImage, newImage, index, rows))
+            index += step;
+        return index;
+    }
+
+    static boolean equalLine(int[][] oldImage, int[][] newImage,
+                             int index, boolean rows) {
+        int limit = rows ? oldImage[0].length : oldImage.length;
+        for (int i = 0; i < limit; i++)
+            if ((rows ? oldImage[index][i] : oldImage[i][index]) !=
+                    (rows ? newImage[index][i] : newImage[i][index])) return false;
         return true;
     }
 
-    // {check if a column is equal in both images}
-    public static boolean equalCols(int col) {
-        for (int row = 0; row < noOfRows; row++) {
-            if (oldImage[row][col] != newImage[row][col]) {
-                return false;
-            }
-        }
-        return true;
+    static void printResult(int[][] oldImage, int[][] newImage) {
+        int x1 = findBoundary(oldImage, newImage, true, true);
+        int x2 = findBoundary(oldImage, newImage, true, false);
+        int y1 = findBoundary(oldImage, newImage, false, true);
+        int y2 = findBoundary(oldImage, newImage, false, false);
+        if (x1 > x2 || y1 > y2) System.out.println("The two images are the same");
+        else System.out.println((x1 + 1) + " " + (y1 + 1) + " " + (x2 + 1) + " " + (y2 + 1));
     }
 }
